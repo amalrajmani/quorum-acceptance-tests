@@ -49,7 +49,8 @@ async function getStorageRoot(fromNodeId, contractAddr) {
         logger.debug("RPC call done")
         logger.debug("response obj:" + JSON.stringify(response))
         if(response.error){
-            logger.error("respObj has error " + response.error)
+            logger.error("respObj has error " + JSON.stringify(response))
+            throw new Error(response.error.message)
         }else{
             storageRoot = response.result
         }

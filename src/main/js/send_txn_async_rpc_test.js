@@ -115,7 +115,12 @@ async function checkSendTransaction(fromNode, account, port, validCase){
 
 
 step('should accept transaction and create new block if from account is valid', async() => {
-    var res = await checkSendTransaction(1, "0xed9d02e382b34818e88b88a309c7fe71e65f419d", 5555, true)
+    const nodeName = cfg.nodes()[1]
+    logger.debug("nodeName="+nodeName)
+    var web3 = new Web3(new Web3.providers.HttpProvider(nodeName))
+    var fromAcct = await web3.eth.getAccounts()
+    logger.debug("default account in node1 -> " + fromAcct[0])
+    var res = await checkSendTransaction(1, fromAcct[0], 5555, true)
      assert.equal(res, true)
 })
 
