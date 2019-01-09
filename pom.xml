@@ -20,7 +20,7 @@
         <CONSENSUS>TBD</CONSENSUS>
         <tags>(basic || basic-${CONSENSUS}) &amp;&amp; !advanced</tags>
         <!-- dependencies -->
-        <web3j-quorum.version>0.10.0</web3j-quorum.version>
+        <web3j-quorum.version>4.0.3</web3j-quorum.version>
         <commons-lang.version>2.6</commons-lang.version>
         <!-- there's an issue with code gen in web3j 3.5.0-->
         <web3j.version>3.4.0</web3j.version>
@@ -50,7 +50,7 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.web3j</groupId>
+            <groupId>my.eth</groupId>
             <artifactId>quorum</artifactId>
             <version>${web3j-quorum.version}</version>
             <exclusions>
