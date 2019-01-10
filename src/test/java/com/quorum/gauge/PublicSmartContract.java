@@ -54,6 +54,7 @@ public class PublicSmartContract extends AbstractSpecImplementation {
         DataStoreFactory.getScenarioDataStore().put(contractName, c);
     }
 
+
     @Step("<contractName> is mined")
     public void verifyContractIsMined(String contractName) {
         Contract c = mustHaveValue(DataStoreFactory.getSpecDataStore(), contractName, Contract.class);
