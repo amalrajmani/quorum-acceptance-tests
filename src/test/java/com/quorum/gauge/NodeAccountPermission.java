@@ -14,7 +14,9 @@ import org.web3j.quorum.methods.response.PermissionNodeList;
 import org.web3j.tx.Contract;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -22,6 +24,16 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @SuppressWarnings("unchecked")
 public class NodeAccountPermission extends AbstractSpecImplementation {
     private static final Logger logger = LoggerFactory.getLogger(NodeAccountPermission.class);
+
+    private static final Map<String, String> accountAccessMap = new HashMap<>();
+
+    static {
+        accountAccessMap.put("FullAccess", "0");
+        accountAccessMap.put("ReadOnly", "1");
+        accountAccessMap.put("Transact", "2");
+        accountAccessMap.put("ContractDeploy", "3");
+
+    }
 
     @Step("Ensure permission account list has <initialAccountCount> accounts in <node>")
     public void checkPermissionAccountCount(int initialAccountCount, QuorumNode node) {
@@ -93,11 +105,20 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         DataStoreFactory.getSpecDataStore().put("permNodeList", nodeList);
     }
 
-    @Step("Add account <addAccount> with permission <access> from <node> as account <fromAccount>")
+    @Step("Set account <addAccount> with permission <access> from <node> as account <fromAccount>")
     public void setAccountPermission(String addAccount, String access, QuorumNode node, String fromAccount) {
-        ExecStatus status = permissionService.setAccountPermission(node, fromAccount, addAccount, access).toBlocking().first().getExecStatus();
+        ExecStatus status = permissionService.setAccountPermission(node, fromAccount, addAccount, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
         logger.debug("node list size:{}", status);
         assertThat(status.isStatus()).isTrue();
+    }
+
+
+    @Step("Set account <addAccount> with permission <access> from <node> as account <fromAccount> fails with error <error>")
+    public void setAccountPermissionFailed(String addAccount, String access, QuorumNode node, String fromAccount, String error) {
+        ExecStatus status = permissionService.setAccountPermission(node, fromAccount, addAccount, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
+        logger.debug("node list size:{}", status);
+        assertThat(status.isStatus()).isFalse();
+        assertThat(status.getMsg().contains(error)).isTrue();
     }
 
     @Step("Ensure node <node> has status <status>")
