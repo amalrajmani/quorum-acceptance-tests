@@ -33,7 +33,6 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         accountAccessMap.put("ReadOnly", "1");
         accountAccessMap.put("Transact", "2");
         accountAccessMap.put("ContractDeploy", "3");
-
     }
 
     @Step("Ensure permission account list has <initialAccountCount> accounts in <node>")
@@ -41,14 +40,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         PermissionAccountList pacct = getPermissionAccountList(node);
         int accountListSize = pacct.getPermissionAccountList().size();
         logger.debug("account list size:{}", accountListSize);
-
         assertThat(initialAccountCount).isEqualTo(accountListSize);
-        int c = 0;
-        for (PermissionAccountList.PermissionAccountInfo i : pacct.getPermissionAccountList()) {
-            ++c;
-            logger.info("{} address: {} access: {}", c, i.getAddress(), i.getAccess());
-        }
-
         DataStoreFactory.getSpecDataStore().put("permAcctList", pacct.getPermissionAccountList());
     }
 
@@ -83,8 +75,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
 
         } catch (Exception ex) {
             exMsg = ex.getMessage();
-            logger.info("deploy contract failed " + ex.getMessage());
-            logger.error("deploy failed", ex);
+            logger.debug("deploy contract failed " + ex.getMessage());
         }
         Assertions.assertThat(c).isNull();
         Assertions.assertThat(exMsg.contains(error)).isTrue();
@@ -113,12 +104,8 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         int nodeListSize = nodeList.size();
         logger.debug("node list size:{}", nodeListSize);
 
-        assertThat(initialNodeCount).isEqualTo(nodeListSize);
-        int c = 0;
-        for (PermissionNodeList.PermissionNodeInfo i : nodeList) {
-            ++c;
-            logger.info("{} node: {} status: {}", c, i.getEnodeId(), i.getStatus());
-        }
+        if (initialNodeCount >= 0)
+            assertThat(initialNodeCount).isEqualTo(nodeListSize);
         DataStoreFactory.getSpecDataStore().put("permNodeList", nodeList);
     }
 
@@ -140,8 +127,8 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
 
     @Step("Ensure node <node> has status <status>")
     public void checkNodeExists(String node, String status) throws Exception {
+        checkPermissionNodeCount(-1, QuorumNode.Node1);
         List<PermissionNodeList.PermissionNodeInfo> permNodeList = (ArrayList<PermissionNodeList.PermissionNodeInfo>) DataStoreFactory.getSpecDataStore().get("permNodeList");
-
         assertThat(permNodeList.size()).isNotEqualTo(0);
         int c = 0;
         boolean isPresent = false;

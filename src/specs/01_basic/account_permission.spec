@@ -1,5 +1,18 @@
 # Permission at account level in a given network
 
+accounts by default have read only permission if they have not been granted explicit access via API quorumAcctMgmt.setAccountAccess.
+The following access levels are available for accounts.
+1. FullAccess - can perform all actions
+2. ReadOnly - can only read values by calling contract's getter methods
+3. Transact - can transact and read values by calling contract's getter methods but cannot deploy a contract
+4. ContractDeploy - can perform all actions
+
+FullAccess and ContractDeploy have the same access level
+
+An account can grant either same access level as its own or lower access level than its own to another account
+
+The initial set of accounts that need access should be initialized via genesis.json config
+
  Tags: basic, permission
 
 ## Check initial account list has right permission
