@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.quorum.methods.response.ExecStatus;
 import org.web3j.quorum.methods.response.PermissionAccountList;
 import org.web3j.quorum.methods.response.PermissionNodeList;
@@ -86,6 +87,22 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
             logger.error("deploy failed", ex);
         }
         Assertions.assertThat(c).isNull();
+        Assertions.assertThat(exMsg.contains(error)).isTrue();
+    }
+
+    @Step("<contractNameKey>'s <methodName> function execution in <node> with value <value> fails with error <error>")
+    public void setStoreContractValueFails(String contractNameKey, String methodName, QuorumNode node, int value, String error) {
+        String exMsg = "";
+        Contract c = mustHaveValue(DataStoreFactory.getSpecDataStore(), contractNameKey, Contract.class);
+        String contractName = mustHaveValue(DataStoreFactory.getSpecDataStore(), contractNameKey + "Type", String.class);
+        logger.debug("{} contract address is:{}, {} {}", contractNameKey, c.getContractAddress(), methodName, value);
+        try {
+            TransactionReceipt tr = contractService.setGenericStoreContractSetValue(node, c.getContractAddress(), contractName, methodName, value, false, null).toBlocking().first();
+            logger.debug("{} {} {}, txHash = {}", contractNameKey, contractName, methodName, tr.getTransactionHash());
+        } catch (Exception ex) {
+            exMsg = ex.getMessage();
+            logger.debug("setc for contract failed " + ex.getMessage());
+        }
         Assertions.assertThat(exMsg.contains(error)).isTrue();
     }
 
