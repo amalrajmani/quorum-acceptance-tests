@@ -19,6 +19,7 @@
 
 package com.quorum.gauge.core;
 
+import com.quorum.gauge.OrgKeyMgmt;
 import com.quorum.gauge.common.Context;
 import com.quorum.gauge.common.QuorumNetworkProperty;
 import com.quorum.gauge.services.*;
@@ -50,6 +51,9 @@ public abstract class AbstractSpecImplementation {
 
     @Autowired
     protected PermissionService permissionService;
+
+    @Autowired
+    protected OrgKeyMgmtService orgKeyMgmtService;
 
     @Autowired
     protected RawContractService rawContractService;
