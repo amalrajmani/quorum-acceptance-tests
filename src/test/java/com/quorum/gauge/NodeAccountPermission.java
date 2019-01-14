@@ -2,12 +2,15 @@ package com.quorum.gauge;
 
 import com.quorum.gauge.common.QuorumNode;
 import com.quorum.gauge.core.AbstractSpecImplementation;
+import com.quorum.gauge.services.UtilService;
 import com.thoughtworks.gauge.Step;
 import com.thoughtworks.gauge.datastore.DataStoreFactory;
 import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.quorum.methods.response.ExecStatus;
 import org.web3j.quorum.methods.response.PermissionAccountList;
@@ -25,6 +28,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @SuppressWarnings("unchecked")
 public class NodeAccountPermission extends AbstractSpecImplementation {
     private static final Logger logger = LoggerFactory.getLogger(NodeAccountPermission.class);
+
+    @Autowired
+    UtilService utilService;
 
     private static final Map<String, String> accountAccessMap = new HashMap<>();
 
@@ -143,40 +149,84 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(isPresent).isTrue();
     }
 
-    @Step("Add account <address> to voter list from <node>")
+    @Step("Add account <address> as voter from <node>")
     public void m1(String address, QuorumNode node) {
-
+        ExecStatus status = permissionService.addAccountToVoterList(node, address).toBlocking().first().getExecStatus();
+        assertThat(status.isStatus()).isTrue();
     }
 
     @Step("Ensure account <address> is present in voter list from <node>")
     public void m12(String address, QuorumNode node) {
-
-    }
-
-    @Step("Remove account <address> to voter list from <node>")
-    public void m13(String address, QuorumNode node) {
-
+        List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
+        boolean found = false;
+        for (String s : voterList) {
+            if (s.equalsIgnoreCase(address)) {
+                found = true;
+                break;
+            }
+        }
+        assertThat(found).isTrue();
     }
 
     @Step("Ensure account <address> is not present in voter list from <node>")
-    public void m14(String address, QuorumNode node) {
-
+    public void m121(String address, QuorumNode node) {
+        List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
+        boolean found = false;
+        for (String s : voterList) {
+            if (s.equalsIgnoreCase(address)) {
+                found = true;
+                break;
+            }
+        }
+        assertThat(found).isFalse();
     }
 
-    @Step("Add account <address> to voter list from <node>")
-    public void m15(String address, QuorumNode node) {
+    @Step("Remove account <address> as voter from <node>")
+    public void m13(String address, QuorumNode node) {
+        ExecStatus status = permissionService.removeAccountFromVoterList(node, address).toBlocking().first().getExecStatus();
+        assertThat(status.isStatus()).isTrue();
 
     }
 
     @Step("Propose node deactivation for nodeId <nodeid> from <node>")
     public void m16(String nodeid, QuorumNode node) {
+        ExecStatus status = permissionService.proposeNodeDeactivation(node, nodeid).toBlocking().first().getExecStatus();
+        assertThat(status.isStatus()).isTrue();
 
     }
 
     @Step("Approve node deactivation for nodeId <nodeid> from <node>")
     public void m17(String nodeid, QuorumNode node) {
-
+        ExecStatus status = permissionService.approveNodeDeactivation(node, nodeid).toBlocking().first().getExecStatus();
+        assertThat(status.isStatus()).isTrue();
     }
 
+    @Step("Save current blocknumber from <node>")
+    public void mq7(QuorumNode node) {
+        EthBlockNumber blkNumber = utilService.getCurrentBlockNumberFrom(node).toBlocking().first();
+        DataStoreFactory.getSpecDataStore().put(node.name() + "blockNumber", blkNumber);
+        logger.debug("current block number from {} is {}", node.name(), blkNumber.getBlockNumber().intValue());
+        assertThat(blkNumber.getBlockNumber().intValue()).isNotEqualTo(0);
+    }
+
+    @Step("Ensure current blocknumber from <node> has not changed")
+    public void m171(QuorumNode node) {
+        EthBlockNumber oldBlkNumber = (EthBlockNumber) DataStoreFactory.getSpecDataStore().get(node.name() + "blockNumber");
+        EthBlockNumber newBlkNumber = utilService.getCurrentBlockNumberFrom(node).toBlocking().first();
+        logger.debug("block number old:{} new:{}", oldBlkNumber.getBlockNumber().intValue(), newBlkNumber.getBlockNumber().intValue());
+        assertThat(newBlkNumber.getBlockNumber().intValue()).isEqualTo(oldBlkNumber.getBlockNumber().intValue());
+    }
+
+    @Step("Wait for <seconds> Seconds")
+    public void m18(int seconds) {
+
+        try {
+            logger.debug("wating for {} seconds", seconds);
+            Thread.sleep(seconds * 1000);
+            logger.debug("wait is over");
+        } catch (InterruptedException e) {
+
+        }
+    }
 
 }
