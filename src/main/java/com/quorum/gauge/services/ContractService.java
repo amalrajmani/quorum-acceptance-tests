@@ -39,7 +39,6 @@ import org.web3j.tx.ReadonlyTransactionManager;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.exceptions.ContractCallException;
 import rx.Observable;
-import rx.schedulers.Schedulers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +58,10 @@ public class ContractService extends AbstractService {
     AccountService accountService;
 
     public Observable<? extends Contract> createSimpleContract(int initialValue, QuorumNode source, QuorumNode target) {
+        return createSimpleContract(initialValue, source, target, DEFAULT_GAS_LIMIT);
+    }
+
+    public Observable<? extends Contract> createSimpleContract(int initialValue, QuorumNode source, QuorumNode target, BigInteger gas) {
         Quorum client = connectionFactory().getConnection(source);
         final List<String> privateFor;
         if (null != target) {
@@ -78,7 +81,7 @@ public class ContractService extends AbstractService {
             return SimpleStorage.deploy(client,
                     clientTransactionManager,
                     BigInteger.valueOf(0),
-                    DEFAULT_GAS_LIMIT,
+                    gas,
                     BigInteger.valueOf(initialValue)).observable();
         });
     }
@@ -376,31 +379,31 @@ public class ContractService extends AbstractService {
             throw new IllegalStateException("Can't find resource ClientReceipt.bin");
         }
         return (sourceAccount != null ? Observable.just(sourceAccount) : accountService.getDefaultAccountAddress(source))
-            .flatMap( fromAddress -> {
-                try {
-                    String binary = StreamUtils.copyToString(binaryStream, Charset.defaultCharset());
-                    PrivateTransactionAsync tx = new PrivateTransactionAsync(
-                            fromAddress,
-                            null,
-                            DEFAULT_GAS_LIMIT,
-                            null,
-                            BigInteger.valueOf(0),
-                            binary,
-                            null,
-                            Arrays.asList(privacyService.id(target)),
-                            callbackUrl
-                    );
-                    Request<?, EthSendTransactionAsync> request = new Request<>(
-                            "eth_sendTransactionAsync",
-                            Arrays.asList(tx),
-                            connectionFactory().getWeb3jService(source),
-                            EthSendTransactionAsync.class
-                    );
-                    return request.observable();
-                } catch (IOException e) {
-                    logger.error("Unable to construct transaction arguments", e);
-                    throw new RuntimeException(e);
-                }
-            });
+                .flatMap(fromAddress -> {
+                    try {
+                        String binary = StreamUtils.copyToString(binaryStream, Charset.defaultCharset());
+                        PrivateTransactionAsync tx = new PrivateTransactionAsync(
+                                fromAddress,
+                                null,
+                                DEFAULT_GAS_LIMIT,
+                                null,
+                                BigInteger.valueOf(0),
+                                binary,
+                                null,
+                                Arrays.asList(privacyService.id(target)),
+                                callbackUrl
+                        );
+                        Request<?, EthSendTransactionAsync> request = new Request<>(
+                                "eth_sendTransactionAsync",
+                                Arrays.asList(tx),
+                                connectionFactory().getWeb3jService(source),
+                                EthSendTransactionAsync.class
+                        );
+                        return request.observable();
+                    } catch (IOException e) {
+                        logger.error("Unable to construct transaction arguments", e);
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 }
