@@ -167,4 +167,24 @@ public class SmartContractDualState extends AbstractSpecImplementation {
         assertThat(failed).isTrue();
     }
 
+    @Step("<contractNameKey>'s <methodName> function execution in <node>, should fail")
+    public void setStoreContractValueInPublicShouldFail(String contractNameKey, String methodName, QuorumNode node) {
+        boolean failed = false;
+        Contract c = mustHaveValue(DataStoreFactory.getSpecDataStore(), contractNameKey, Contract.class);
+        String contractName = mustHaveValue(DataStoreFactory.getSpecDataStore(), contractNameKey + "Type", String.class);
+        try {
+            int actualValue = contractService.readGenericStoreContractGetValue(node, c.getContractAddress(), contractName, methodName);
+            logger.debug("{} {} {} = {}", contractNameKey, contractName, methodName, actualValue);
+        } catch (Exception txe) {
+            logger.debug("Expected transaction failed: {}", txe.getMessage());
+            if (txe.getMessage().contains("Empty value (0x) returned from contract"))
+                failed = true;
+            else
+                throw new RuntimeException(txe);
+        }
+
+        assertThat(failed).isTrue();
+
+    }
+
 }
