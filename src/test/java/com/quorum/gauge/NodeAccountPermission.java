@@ -143,5 +143,40 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(isPresent).isTrue();
     }
 
+    @Step("Add account <address> to voter list from <node>")
+    public void m1(String address, QuorumNode node) {
+
+    }
+
+    @Step("Ensure account <address> is present in voter list from <node>")
+    public void m12(String address, QuorumNode node) {
+
+    }
+
+    @Step("Remove account <address> to voter list from <node>")
+    public void m13(String address, QuorumNode node) {
+
+    }
+
+    @Step("Ensure account <address> is not present in voter list from <node>")
+    public void m14(String address, QuorumNode node) {
+
+    }
+
+    @Step("Add account <address> to voter list from <node>")
+    public void m15(String address, QuorumNode node) {
+
+    }
+
+    @Step("Propose node deactivation for nodeId <nodeid> from <node>")
+    public void m16(String nodeid, QuorumNode node) {
+
+    }
+
+    @Step("Approve node deactivation for nodeId <nodeid> from <node>")
+    public void m17(String nodeid, QuorumNode node) {
+
+    }
+
 
 }
