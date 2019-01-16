@@ -67,6 +67,16 @@ public class PrivateSmartContract extends AbstractSpecImplementation {
         DataStoreFactory.getScenarioDataStore().put(contractName, contract);
     }
 
+    @Step("Deploy a simple smart contract with initial value <initialValue> in <source>'s default account and it's private for org <orgId>, named this contract as <contractName>")
+    public void setupContractForOrg(int initialValue, QuorumNode source, String orgId, String contractName) {
+        saveCurrentBlockNumber();
+        logger.debug("Setting up contract from {} to {}", source, orgId);
+        Contract contract = contractService.createSimpleContractForOrg(initialValue, source, orgId).toBlocking().first();
+
+        DataStoreFactory.getSpecDataStore().put(contractName, contract);
+        DataStoreFactory.getScenarioDataStore().put(contractName, contract);
+    }
+
     @Step("Transaction Hash is returned for <contractName>")
     public void verifyTransactionHash(String contractName) {
         Contract c = mustHaveValue(DataStoreFactory.getSpecDataStore(), contractName, Contract.class);

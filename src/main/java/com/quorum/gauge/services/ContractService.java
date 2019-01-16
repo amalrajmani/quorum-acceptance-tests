@@ -60,12 +60,39 @@ public class ContractService extends AbstractService {
     public Observable<? extends Contract> createSimpleContract(int initialValue, QuorumNode source, QuorumNode target) {
         return createSimpleContract(initialValue, source, target, DEFAULT_GAS_LIMIT);
     }
+    public Observable<? extends Contract> createSimpleContractForOrg(int initialValue, QuorumNode source, String orgId) {
+        return createSimpleContractForOrg(initialValue, source, orgId, DEFAULT_GAS_LIMIT);
+    }
 
     public Observable<? extends Contract> createSimpleContract(int initialValue, QuorumNode source, QuorumNode target, BigInteger gas) {
         Quorum client = connectionFactory().getConnection(source);
         final List<String> privateFor;
         if (null != target) {
             privateFor = Arrays.asList(privacyService.id(target));
+        } else {
+            privateFor = null;
+        }
+
+        return accountService.getDefaultAccountAddress(source).flatMap(address -> {
+            ClientTransactionManager clientTransactionManager = new ClientTransactionManager(
+                    client,
+                    address,
+                    null,
+                    privateFor,
+                    DEFAULT_MAX_RETRY,
+                    DEFAULT_SLEEP_DURATION_IN_MILLIS);
+            return SimpleStorage.deploy(client,
+                    clientTransactionManager,
+                    BigInteger.valueOf(0),
+                    gas,
+                    BigInteger.valueOf(initialValue)).observable();
+        });
+    }
+    public Observable<? extends Contract> createSimpleContractForOrg(int initialValue, QuorumNode source, String orgId, BigInteger gas) {
+        Quorum client = connectionFactory().getConnection(source);
+        final List<String> privateFor;
+        if (null != orgId) {
+            privateFor = Arrays.asList(orgId);
         } else {
             privateFor = null;
         }
