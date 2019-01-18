@@ -132,9 +132,10 @@ while ${DOWN}; do
     if [ ${k} -le 0 ]; then
         echo "Tessera is taking a long time to start.  Look at the Tessera logs in qdata/logs/ for help diagnosing the problem."
         echo "Log file data"
-        echo "################AMAL start ##################"
+        echo "################ start ##################"
         cat qdata/logs/tessera1.log
-        echo "################AMAL end ##################"
+        echo "################ end ##################"
+        exit 1
     fi
     echo "Waiting until all Tessera nodes are running..."
 
