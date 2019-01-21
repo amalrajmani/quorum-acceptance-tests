@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.4.21;
 
 interface storec {
     function setc(uint x) external;
