@@ -73,7 +73,7 @@ TESSERA_CONFIG_TYPE=
 
 #the space in "0.8 " is important in the lexicographic comparison (space is lower value than most printable chars)
 #TODO - this will break when we get to version 0.10 (hopefully we would have moved to 1.x by then)
-if [ "$TESSERA_VERSION" \> "0.8 " ]; then
+if [ "$TESSERA_VERSION" \> "0.8" ]; then
     TESSERA_CONFIG_TYPE="-enhanced-"
 fi
 
