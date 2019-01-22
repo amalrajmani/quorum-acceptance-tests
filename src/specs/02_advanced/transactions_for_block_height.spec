@@ -69,6 +69,6 @@ contract ClientReceipt {
 
  Tags: raft
 
-* Deploy "100" private smart contracts between a default account in "Node1" and a default account in "Node7"
+* Deploy "100" private smart contracts between a default account in "Node1" and a default account in "Node4"
 * "Node1" has received "100" transactions
-* "Node7" has received "100" transactions
+* "Node4" has received "100" transactions

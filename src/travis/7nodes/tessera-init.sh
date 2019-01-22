@@ -3,7 +3,7 @@
 echo "[*] Initialising Tessera configuration"
 
 currentDir=$(pwd)
-for i in {1..7}
+for i in {1..4}
 do
     DDIR="${currentDir}/qdata/c${i}"
     mkdir -p ${DDIR}
@@ -54,15 +54,6 @@ do
         },
         {
             "url": "http://localhost:9004"
-        },
-        {
-            "url": "http://localhost:9005"
-        },
-        {
-            "url": "http://localhost:9006"
-        },
-        {
-            "url": "http://localhost:9007"
         }
     ],
     "keys": {
@@ -147,15 +138,6 @@ EOF
         },
         {
             "url": "http://localhost:9004"
-        },
-        {
-            "url": "http://localhost:9005"
-        },
-        {
-            "url": "http://localhost:9006"
-        },
-        {
-            "url": "http://localhost:9007"
         }
     ],
     "keys": {
