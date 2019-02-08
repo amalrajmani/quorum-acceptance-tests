@@ -6,10 +6,14 @@ echo "install started..."
 sudo apt update
 sudo apt -y install dpkg
 sudo apt -y install openjdk-8-jre-headless
+java -version
 sudo apt -y install maven
+mvn --version
 sudo apt-get -y install software-properties-common
 sudo add-apt-repository -y ppa:ethereum/ethereum
+sudo apt update
 sudo apt-get -y install solc
+solc --version
 echo "getting tessera jar..."
 wget https://github.com/jpmorganchase/tessera/releases/download/tessera-0.8/tessera-app-0.8-app.jar -O tessera.jar -q
 sudo cp tessera.jar $HOME
