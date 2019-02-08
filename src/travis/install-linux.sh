@@ -5,13 +5,16 @@
 echo "install started..."
 sudo apt update
 sudo apt -y install dpkg
+echo "installing jre 8.."
 sudo apt -y install openjdk-8-jre-headless
 java -version
+echo "installing maven.."
 sudo apt -y install maven
 mvn --version
 sudo apt-get -y install software-properties-common
 sudo add-apt-repository -y ppa:ethereum/ethereum
 sudo apt update
+echo "installing solidity.."
 sudo apt-get -y install solc
 solc --version
 echo "getting tessera jar..."
