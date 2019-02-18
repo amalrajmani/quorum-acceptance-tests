@@ -97,13 +97,13 @@ public class OrgKeyMgmt extends AbstractSpecImplementation {
         assertThat(keyFound).isTrue();
     }
     @Step("Delete key <tmKey> from sub org <sorgId> from <node>")
-    public void deleteOrgKey(String tmKey, String sorgId, QuorumNode node) {
-        ExecStatus status = orgKeyMgmtService.deleteOrgKey(node, sorgId, tmKey).toBlocking().first().getExecStatus();
+    public void removeOrgKey(String tmKey, String sorgId, QuorumNode node) {
+        ExecStatus status = orgKeyMgmtService.removeOrgKey(node, sorgId, tmKey).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
     }
     @Step("Delete voter <voterAcct> from master org <morgId> from <node>")
-    public void deleteOrgVoter(String voterAcct, String morgId, QuorumNode node) {
-        ExecStatus status = orgKeyMgmtService.deleteOrgVoter(node, morgId, voterAcct).toBlocking().first().getExecStatus();
+    public void removeOrgVoter(String voterAcct, String morgId, QuorumNode node) {
+        ExecStatus status = orgKeyMgmtService.removeOrgVoter(node, morgId, voterAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
     }
 

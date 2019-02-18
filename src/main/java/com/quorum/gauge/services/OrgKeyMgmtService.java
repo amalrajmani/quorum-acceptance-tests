@@ -36,10 +36,10 @@ public class OrgKeyMgmtService extends AbstractService{
         Quorum client = connectionFactory().getConnection(node);
         return client.quorumAddOrgVoter( morgId, voterAcct, new PrivateTransaction(fromAddress, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
     }
-    public Observable<ExecStatusInfo> deleteOrgVoter(QuorumNode node, String morgId, String voterAcct) {
+    public Observable<ExecStatusInfo> removeOrgVoter(QuorumNode node, String morgId, String voterAcct) {
         String fromAddress = accountService.getDefaultAccountAddress(node).toBlocking().first();
         Quorum client = connectionFactory().getConnection(node);
-        return client.quorumDeleteOrgVoter( morgId, voterAcct, new PrivateTransaction(fromAddress, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
+        return client.quorumRemoveOrgVoter( morgId, voterAcct, new PrivateTransaction(fromAddress, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
     }
 
     public Observable<OrgVoterList> getOrgVoterList(QuorumNode node, String morgId) {
@@ -57,10 +57,10 @@ public class OrgKeyMgmtService extends AbstractService{
         Quorum client = connectionFactory().getConnection(node);
         return client.quorumAddOrgKey( sorgId, tmKey, new PrivateTransaction(fromAddress, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
     }
-   public Observable<ExecStatusInfo> deleteOrgKey(QuorumNode node, String sorgId, String tmKey) {
+   public Observable<ExecStatusInfo> removeOrgKey(QuorumNode node, String sorgId, String tmKey) {
         String fromAddress = accountService.getDefaultAccountAddress(node).toBlocking().first();
         Quorum client = connectionFactory().getConnection(node);
-        return client.quorumDeleteOrgKey( sorgId, tmKey, new PrivateTransaction(fromAddress, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
+        return client.quorumRemoveOrgKey( sorgId, tmKey, new PrivateTransaction(fromAddress, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
     }
 
     public Observable<ExecStatusInfo> approvePendingOp(QuorumNode node, String sorgId) {
