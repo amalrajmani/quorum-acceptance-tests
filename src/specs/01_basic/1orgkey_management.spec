@@ -9,9 +9,9 @@
 * Wait for "2" Seconds
 * Validate master org "BCD" and sub org "BCD1" are present as a part of the org list at smart contract from "Node1"
 * Wait for "2" Seconds
-* Add account "0xed9d02e382b34818e88B88a309c7fe71E65f419d" as voter for master org "BCD" from "Node1"
+* Add "Node1"'s default account as voter for master org "BCD" from "Node1"
 * Wait for "2" Seconds
-* Validate account "0xed9d02e382b34818e88B88a309c7fe71E65f419d" is present as voter for master org "BCD" from "Node1"
+* Validate "Node1"'s default account is present as voter for master org "BCD" from "Node1"
 * Wait for "2" Seconds
 * Add key "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=" as a key to sub org "BCD1" from "Node1"
 * Wait for "2" Seconds
@@ -32,4 +32,4 @@
 * Wait for "2" Seconds
 * Approve pending approval process for sub org "BCD1" from "Node1"
 * Wait for "2" Seconds
-* Delete voter "0xed9d02e382b34818e88B88a309c7fe71E65f419d" from master org "BCD" from "Node1"
+* Delete voter "Node1"'s default account from master org "BCD" from "Node1"
