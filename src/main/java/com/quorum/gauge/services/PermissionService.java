@@ -1,6 +1,7 @@
 package com.quorum.gauge.services;
 
 import com.quorum.gauge.common.QuorumNode;
+import com.quorum.gauge.ext.NodeInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.web3j.quorum.Quorum;
@@ -18,6 +19,18 @@ public class PermissionService extends AbstractService {
 
     @Autowired
     AccountService accountService;
+
+    public String NodeInfo(QuorumNode node) {
+
+        org.web3j.protocol.core.Request<?, NodeInfo> nodeInfoRequest = new org.web3j.protocol.core.Request<>(
+                "admin_nodeInfo",
+                null,
+                connectionFactory().getWeb3jService(node),
+                NodeInfo.class
+        );
+        NodeInfo nodeInfo = nodeInfoRequest.observable().toBlocking().first();
+        return nodeInfo.getEnode();
+    }
 
     public Observable<PermissionAccountList> getPermissionAccountList(QuorumNode node) {
         Quorum client = connectionFactory().getConnection(node);

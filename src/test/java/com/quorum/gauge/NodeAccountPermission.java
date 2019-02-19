@@ -154,8 +154,23 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(status.getMsg().contains(error)).isTrue();
     }
 
-    @Step("Ensure node <node> has status <status>")
-    public void checkNodeExists(String node, String status) throws Exception {
+    public String getFullEnode(String enode, QuorumNode n1) {
+        List<PermissionNodeList.PermissionNodeInfo> permNodeList = permissionService.getPermissionNodeList(n1).toBlocking().first().getPermissionNodeList();
+        assertThat(permNodeList.size()).isNotEqualTo(0);
+        int c = 0;
+        boolean isPresent = false;
+        for (PermissionNodeList.PermissionNodeInfo i : permNodeList) {
+            ++c;
+            if (i.getEnodeId().contains(enode)) {
+                return i.getEnodeId();
+            }
+        }
+        return null;
+    }
+
+    @Step("Check <node> has status <status>")
+    public void checkNodeExists(QuorumNode node, String status) throws Exception {
+        String enodeId = getEnodeId(node);
         checkPermissionNodeCount(-1, QuorumNode.Node1);
         List<PermissionNodeList.PermissionNodeInfo> permNodeList = (ArrayList<PermissionNodeList.PermissionNodeInfo>) DataStoreFactory.getSpecDataStore().get("permNodeList");
         assertThat(permNodeList.size()).isNotEqualTo(0);
@@ -164,7 +179,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         for (PermissionNodeList.PermissionNodeInfo i : permNodeList) {
             ++c;
             logger.debug("{} node: {} status: {}", c, i.getEnodeId(), i.getStatus());
-            if (i.getEnodeId().contains(node) && i.getStatus().equals(status)) {
+            if (i.getEnodeId().contains(enodeId) && i.getStatus().equals(status)) {
                 isPresent = true;
                 break;
             }
@@ -210,28 +225,38 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
     @Step("Remove <node1>'s default account as voter from <node>")
-    public void m13(QuorumNode node1, QuorumNode node) {
+    public void removeAccountFromVoter(QuorumNode node1, QuorumNode node) {
         String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
         ExecStatus status = permissionService.removeAccountFromVoterList(node, defAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
 
     }
 
-    @Step("Propose node deactivation for nodeId <nodeid> from <node>")
-    public void m16(String nodeid, QuorumNode node) {
-        ExecStatus status = permissionService.proposeNodeDeactivation(node, nodeid).toBlocking().first().getExecStatus();
+    public String getEnodeId(QuorumNode node) {
+        String enode = permissionService.NodeInfo(node);
+        String enodeId = enode.substring(0, enode.indexOf("@")).substring("enode://".length());
+        return enodeId;
+    }
+
+    @Step("Propose node deactivation for <enode> from <node>")
+    public void proposeNodeDeactivation(QuorumNode node1, QuorumNode node) {
+        String enodeId = getEnodeId(node1);
+        String fullEnodeId = getFullEnode(enodeId, node);
+        ExecStatus status = permissionService.proposeNodeDeactivation(node, fullEnodeId).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
 
     }
 
-    @Step("Approve node deactivation for nodeId <nodeid> from <node>")
-    public void m17(String nodeid, QuorumNode node) {
-        ExecStatus status = permissionService.approveNodeDeactivation(node, nodeid).toBlocking().first().getExecStatus();
+    @Step("Approve node deactivation for <node1> from <node>")
+    public void approveNodeDeactivation(QuorumNode node1, QuorumNode node) {
+        String enodeId = getEnodeId(node1);
+        String fullEnodeId = getFullEnode(enodeId, node);
+        ExecStatus status = permissionService.approveNodeDeactivation(node, fullEnodeId).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
     }
 
     @Step("Save current blocknumber from <node>")
-    public void mq7(QuorumNode node) {
+    public void saveCurrentBlockNumber(QuorumNode node) {
         EthBlockNumber blkNumber = utilService.getCurrentBlockNumberFrom(node).toBlocking().first();
         DataStoreFactory.getSpecDataStore().put(node.name() + "blockNumber", blkNumber);
         logger.debug("current block number from {} is {}", node.name(), blkNumber.getBlockNumber().intValue());
@@ -239,7 +264,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
     @Step("Ensure current blocknumber from <node> has not changed")
-    public void m171(QuorumNode node) {
+    public void checkBlockNumberHasNotChanged(QuorumNode node) {
         EthBlockNumber oldBlkNumber = (EthBlockNumber) DataStoreFactory.getSpecDataStore().get(node.name() + "blockNumber");
         EthBlockNumber newBlkNumber = utilService.getCurrentBlockNumberFrom(node).toBlocking().first();
         logger.debug("block number old:{} new:{}", oldBlkNumber.getBlockNumber().intValue(), newBlkNumber.getBlockNumber().intValue());
@@ -247,7 +272,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
     @Step("Wait for <seconds> Seconds")
-    public void m18(int seconds) {
+    public void waitForSomeSeconds(int seconds) {
 
         try {
             logger.debug("wating for {} seconds", seconds);
