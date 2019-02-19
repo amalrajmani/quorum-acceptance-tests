@@ -172,18 +172,20 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(isPresent).isTrue();
     }
 
-    @Step("Add account <address> as voter from <node>")
-    public void m1(String address, QuorumNode node) {
-        ExecStatus status = permissionService.addAccountToVoterList(node, address).toBlocking().first().getExecStatus();
+    @Step("Add <node1>'s default account as voter from <node>")
+    public void addAccountToVoterList(QuorumNode node1, QuorumNode node) {
+        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
+        ExecStatus status = permissionService.addAccountToVoterList(node, defAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
     }
 
-    @Step("Ensure account <address> is present in voter list from <node>")
-    public void m12(String address, QuorumNode node) {
+    @Step("Check <node1>'s default account is present in voter list from <node>")
+    public void checkAccountInVoterList(QuorumNode node1, QuorumNode node) {
+        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
         List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
         boolean found = false;
         for (String s : voterList) {
-            if (s.equalsIgnoreCase(address)) {
+            if (s.equalsIgnoreCase(defAcct)) {
                 found = true;
                 break;
             }
@@ -191,22 +193,26 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(found).isTrue();
     }
 
-    @Step("Ensure account <address> is not present in voter list from <node>")
-    public void m121(String address, QuorumNode node) {
+    @Step("Check <node1>'s default account is not present in voter list from <node>")
+    public void checkAccountNotInVoterList(QuorumNode node1, QuorumNode node) {
+        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
         List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
         boolean found = false;
-        for (String s : voterList) {
-            if (s.equalsIgnoreCase(address)) {
-                found = true;
-                break;
+        if (voterList != null) {
+            for (String s : voterList) {
+                if (s.equalsIgnoreCase(defAcct)) {
+                    found = true;
+                    break;
+                }
             }
         }
         assertThat(found).isFalse();
     }
 
-    @Step("Remove account <address> as voter from <node>")
-    public void m13(String address, QuorumNode node) {
-        ExecStatus status = permissionService.removeAccountFromVoterList(node, address).toBlocking().first().getExecStatus();
+    @Step("Remove <node1>'s default account as voter from <node>")
+    public void m13(QuorumNode node1, QuorumNode node) {
+        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
+        ExecStatus status = permissionService.removeAccountFromVoterList(node, defAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
 
     }
