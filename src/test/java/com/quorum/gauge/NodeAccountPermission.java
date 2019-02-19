@@ -32,13 +32,13 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     @Autowired
     UtilService utilService;
 
-    private static final Map<String, String> accountAccessMap = new HashMap<>();
+    private static final Map<String, Integer> accountAccessMap = new HashMap<>();
 
     static {
-        accountAccessMap.put("FullAccess", "0");
-        accountAccessMap.put("ReadOnly", "1");
-        accountAccessMap.put("Transact", "2");
-        accountAccessMap.put("ContractDeploy", "3");
+        accountAccessMap.put("ReadOnly", 0);
+        accountAccessMap.put("Transact", 1);
+        accountAccessMap.put("ContractDeploy", 2);
+        accountAccessMap.put("FullAccess", 3);
     }
 
     @Step("Ensure permission account list has <initialAccountCount> accounts in <node>")
@@ -55,8 +55,10 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         return pacct;
     }
 
-    @Step("Ensure account <address> has permission <access>")
-    public void checkAccountExists(String address, String access) throws Exception {
+
+    @Step("Check <node>'s default account has permission <access>")
+    public void checkAccountExistsWithPerm(QuorumNode node, String access) throws Exception {
+        String defaultAcct = accountService.getDefaultAccountAddress(node).toBlocking().first();
         List<PermissionAccountList.PermissionAccountInfo> pacctList = getPermissionAccountList(QuorumNode.Node1).getPermissionAccountList();
         assertThat(pacctList.size()).isNotEqualTo(0);
         int c = 0;
@@ -64,7 +66,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         for (PermissionAccountList.PermissionAccountInfo i : pacctList) {
             ++c;
             logger.debug("{} address: {} access: {}", c, i.getAddress(), i.getAccess());
-            if (i.getAddress().equalsIgnoreCase(address) && i.getAccess().equalsIgnoreCase(access)) {
+            if (i.getAddress().equalsIgnoreCase(defaultAcct) && i.getAccess().equalsIgnoreCase(access)) {
                 isPresent = true;
                 break;
             }
@@ -123,9 +125,30 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
 
+    @Step("Set <node1>'s default account with permission <access> from <node2>'s default account")
+    public void setAccountPermissionWithDefault(QuorumNode node1, String access, QuorumNode node2) {
+        String targetDefaultAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
+        String frmDefaultAcct = accountService.getDefaultAccountAddress(node2).toBlocking().first();
+
+        ExecStatus status = permissionService.setAccountPermission(node2, frmDefaultAcct, targetDefaultAcct, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
+        logger.debug("node list size:{}", status);
+        assertThat(status.isStatus()).isTrue();
+    }
+
+
     @Step("Set account <addAccount> with permission <access> from <node> as account <fromAccount> fails with error <error>")
     public void setAccountPermissionFailed(String addAccount, String access, QuorumNode node, String fromAccount, String error) {
         ExecStatus status = permissionService.setAccountPermission(node, fromAccount, addAccount, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
+        logger.debug("node list size:{}", status);
+        assertThat(status.isStatus()).isFalse();
+        assertThat(status.getMsg().contains(error)).isTrue();
+    }
+
+    @Step("Set <node1>'s default account with permission <access> from from <node2>'s default account fails with error <error>")
+    public void setAccountPermissionFailedWithDefault(QuorumNode node1, String access, QuorumNode node2, String error) {
+        String targetDefaultAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
+        String frmDefaultAcct = accountService.getDefaultAccountAddress(node2).toBlocking().first();
+        ExecStatus status = permissionService.setAccountPermission(node2, frmDefaultAcct, targetDefaultAcct, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
         logger.debug("node list size:{}", status);
         assertThat(status.isStatus()).isFalse();
         assertThat(status.getMsg().contains(error)).isTrue();

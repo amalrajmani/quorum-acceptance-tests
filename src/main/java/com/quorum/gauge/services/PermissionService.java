@@ -34,7 +34,8 @@ public class PermissionService extends AbstractService {
         return client.quorumGetPermissionVoterList().observable();
     }
 
-    public Observable<ExecStatusInfo> setAccountPermission(QuorumNode node, String fromAccount, String addAccount, String access) {
+
+    public Observable<ExecStatusInfo> setAccountPermission(QuorumNode node, String fromAccount, String addAccount, int access) {
         Quorum client = connectionFactory().getConnection(node);
         return client.quorumSetAccountPermission(addAccount, access, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
     }
