@@ -138,6 +138,9 @@ public abstract class AbstractSpecImplementation {
         return Schedulers.from(executor);
     }
 
+    /**
+     * @return number of nodes specified in the configuration yml
+     */
     protected int numberOfQuorumNodes() {
         return networkProperty.getNodes().size();
     }
