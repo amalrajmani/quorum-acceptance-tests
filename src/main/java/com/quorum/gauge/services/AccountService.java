@@ -30,9 +30,9 @@ public class AccountService extends AbstractService {
 
     public Observable<String> getAccountAddresses(QuorumNode node) {
         return connectionFactory()
-                .getConnection(node)
-                .ethAccounts()
-                .observable()
+            .getConnection(node)
+            .ethAccounts()
+            .observable()
                 .flatMap(ethAccounts -> Observable.from(ethAccounts.getAccounts()));
     }
 

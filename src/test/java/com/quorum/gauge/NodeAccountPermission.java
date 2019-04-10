@@ -12,9 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.quorum.methods.response.ExecStatus;
-import org.web3j.quorum.methods.response.PermissionAccountList;
-import org.web3j.quorum.methods.response.PermissionNodeList;
+import org.web3j.quorum.methods.response.*;
 import org.web3j.tx.Contract;
 
 import java.util.ArrayList;
@@ -41,6 +39,27 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         accountAccessMap.put("FullAccess", 3);
     }
 
+
+    @Step("get org list from <node>")
+    public void checkGetOrgList(QuorumNode node) {
+        PermissionOrgList orgList = permissionService.getPermissionOrgList(node).toBlocking().first();
+        int c = 0;
+        for (PermissionOrgList.PermissionOrgInfo o : orgList.getPermissionOrgList()) {
+            ++c;
+            logger.info("{} org -> {}", c, o);
+        }
+
+        PermissionAccountList acctList = permissionService.getPermissionAccountList(node).toBlocking().first();
+        List<PermissionAccountList.PermissionAccountInfo> pa = acctList.getPermissionAccountList();
+        logger.info("acctlist {}", pa);
+        PermissionNodeList nodeList = permissionService.getPermissionNodeList(node).toBlocking().first();
+        List<PermissionNodeList.PermissionNodeInfo> pn = nodeList.getPermissionNodeList();
+        logger.info("acctlist {}", pn);
+        PermissionRoleList roleList = permissionService.getPermissionRoleList(node).toBlocking().first();
+        List<PermissionRoleList.PermissionRoleInfo> pr = roleList.getPermissionRoleList();
+        logger.info("acctlist {}", pr);
+    }
+
     @Step("Ensure permission account list has <initialAccountCount> accounts in <node>")
     public void checkPermissionAccountCount(int initialAccountCount, QuorumNode node) {
         PermissionAccountList pacct = getPermissionAccountList(node);
@@ -65,11 +84,11 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         boolean isPresent = false;
         for (PermissionAccountList.PermissionAccountInfo i : pacctList) {
             ++c;
-            logger.debug("{} address: {} access: {}", c, i.getAddress(), i.getAccess());
+            /*logger.debug("{} address: {} access: {}", c, i.getAddress(), i.getAccess());
             if (i.getAddress().equalsIgnoreCase(defaultAcct) && i.getAccess().equalsIgnoreCase(access)) {
                 isPresent = true;
                 break;
-            }
+            }*/
         }
         assertThat(isPresent).isTrue();
     }
@@ -161,8 +180,8 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         boolean isPresent = false;
         for (PermissionNodeList.PermissionNodeInfo i : permNodeList) {
             ++c;
-            if (i.getEnodeId().contains(enode)) {
-                return i.getEnodeId();
+            if (i.getUrl().contains(enode)) {
+                return i.getUrl();
             }
         }
         return null;
@@ -178,8 +197,8 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         boolean isPresent = false;
         for (PermissionNodeList.PermissionNodeInfo i : permNodeList) {
             ++c;
-            logger.debug("{} node: {} status: {}", c, i.getEnodeId(), i.getStatus());
-            if (i.getEnodeId().contains(enodeId) && i.getStatus().equals(status)) {
+            logger.debug("{} node: {} status: {}", c, i.getUrl(), i.getStatus());
+            if (i.getUrl().contains(enodeId) && i.getStatus() == Integer.parseInt(status)) {
                 isPresent = true;
                 break;
             }
@@ -197,30 +216,30 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     @Step("Check <node1>'s default account is present in voter list from <node>")
     public void checkAccountInVoterList(QuorumNode node1, QuorumNode node) {
         String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
+        //List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
         boolean found = false;
-        for (String s : voterList) {
+        /*for (String s : voterList) {
             if (s.equalsIgnoreCase(defAcct)) {
                 found = true;
                 break;
             }
-        }
+        }*/
         assertThat(found).isTrue();
     }
 
     @Step("Check <node1>'s default account is not present in voter list from <node>")
     public void checkAccountNotInVoterList(QuorumNode node1, QuorumNode node) {
         String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
+        //List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
         boolean found = false;
-        if (voterList != null) {
+        /*if (voterList != null) {
             for (String s : voterList) {
                 if (s.equalsIgnoreCase(defAcct)) {
                     found = true;
                     break;
                 }
             }
-        }
+        }*/
         assertThat(found).isFalse();
     }
 

@@ -139,15 +139,15 @@ public class ContractService extends AbstractService {
     }
 
     public Observable<TransactionReceipt> updateSimpleContract(final QuorumNode source, final QuorumNode target,
-                                                   final String contractAddress, final int newValue) {
+                                                               final String contractAddress, final int newValue) {
         return this.updateSimpleContractWithGasLimit(source, target, contractAddress, DEFAULT_GAS_LIMIT, newValue);
     }
 
     public Observable<TransactionReceipt> updateSimpleContractWithGasLimit(final QuorumNode source,
-                                                               final QuorumNode target,
-                                                               final String contractAddress,
-                                                               final BigInteger gasLimit,
-                                                               final int newValue) {
+                                                                           final QuorumNode target,
+                                                                           final String contractAddress,
+                                                                           final BigInteger gasLimit,
+                                                                           final int newValue) {
         final Quorum client = connectionFactory().getConnection(source);
         final BigInteger value = BigInteger.valueOf(newValue);
         final List<String> privateFor = singletonList(privacyService.id(target));

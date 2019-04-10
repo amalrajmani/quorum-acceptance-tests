@@ -54,7 +54,7 @@ public class IstanbulService extends AbstractService {
 
         Request<?, MinerStartStop> request = new Request<>(
                 "miner_start",
-                Collections.emptyList(),
+            Collections.emptyList(),
                 connectionFactory().getWeb3jService(node),
                 MinerStartStop.class
         );

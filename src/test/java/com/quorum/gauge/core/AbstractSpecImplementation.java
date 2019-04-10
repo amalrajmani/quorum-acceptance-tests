@@ -19,7 +19,6 @@
 
 package com.quorum.gauge.core;
 
-import com.quorum.gauge.OrgKeyMgmt;
 import com.quorum.gauge.common.Context;
 import com.quorum.gauge.common.QuorumNetworkProperty;
 import com.quorum.gauge.services.*;

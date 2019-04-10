@@ -34,23 +34,17 @@ import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.quorum.Quorum;
-import org.web3j.quorum.UnixDomainSocketFactory;
-import org.web3j.quorum.enclave.Constellation;
 import org.web3j.quorum.enclave.Enclave;
-import org.web3j.quorum.enclave.Tessera;
-import org.web3j.quorum.enclave.protocol.EnclaveService;
-import org.web3j.quorum.tx.QuorumTransactionManager;
 import org.web3j.tx.Contract;
 import org.web3j.tx.RawTransactionManager;
 import rx.Observable;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+//import org.web3j.quorum.UnixDomainSocketFactory;
 
 @Service
 public class RawContractService extends AbstractService {
@@ -71,7 +65,7 @@ public class RawContractService extends AbstractService {
 
             RawTransactionManager qrtxm = new RawTransactionManager(
                     web3j,
-                    credentials,
+                credentials,
                     DEFAULT_MAX_RETRY,
                     DEFAULT_SLEEP_DURATION_IN_MILLIS);
 
@@ -125,8 +119,8 @@ public class RawContractService extends AbstractService {
         try {
             QuorumNetworkProperty.WalletData walletData = privacyService.walletData(wallet);
             Credentials credentials = WalletUtils.loadCredentials(walletData.getWalletPass(), walletData.getWalletPath());
-
-            QuorumTransactionManager qrtxm = new QuorumTransactionManager(client,
+            return null;
+            /*QuorumTransactionManager qrtxm = new QuorumTransactionManager(client,
                     credentials,
                     privacyService.id(source),
                     Arrays.asList(privacyService.id(target)),
@@ -138,7 +132,7 @@ public class RawContractService extends AbstractService {
                     qrtxm,
                     BigInteger.valueOf(0),
                     DEFAULT_GAS_LIMIT,
-                    BigInteger.valueOf(initialValue)).observable();
+                    BigInteger.valueOf(initialValue)).observable();*/
 
         } catch (IOException e) {
             logger.error("RawTransaction - private", e);
@@ -157,7 +151,8 @@ public class RawContractService extends AbstractService {
             QuorumNetworkProperty.WalletData walletData = privacyService.walletData(wallet);
             Credentials credentials = WalletUtils.loadCredentials(walletData.getWalletPass(), walletData.getWalletPath());
 
-            QuorumTransactionManager qrtxm = new QuorumTransactionManager(client,
+            return null;
+            /*QuorumTransactionManager qrtxm = new QuorumTransactionManager(client,
                     credentials,
                     privacyService.id(source),
                     Arrays.asList(privacyService.id(target)),
@@ -168,7 +163,7 @@ public class RawContractService extends AbstractService {
             return SimpleStorage.load(contractAddress, client,
                     qrtxm,
                     BigInteger.valueOf(0),
-                    DEFAULT_GAS_LIMIT).set(BigInteger.valueOf(newValue)).observable();
+                    DEFAULT_GAS_LIMIT).set(BigInteger.valueOf(newValue)).observable();*/
 
         } catch (IOException e) {
             logger.error("RawTransaction - private", e);
@@ -179,8 +174,8 @@ public class RawContractService extends AbstractService {
         }
     }
 
-    private Enclave buildEnclave(QuorumNode source, Quorum client){
-        String thirdPartyURL = privacyService.thirdPartyUrl(source);
+    private Enclave buildEnclave(QuorumNode source, Quorum client) {
+        /*String thirdPartyURL = privacyService.thirdPartyUrl(source);
         if (thirdPartyURL.endsWith("ipc")){
             EnclaveService enclaveService = new EnclaveService("http://localhost", 12345, getIPCHttpClient(thirdPartyURL));
             Enclave enclave = new Constellation(enclaveService, client);
@@ -191,13 +186,15 @@ public class RawContractService extends AbstractService {
             EnclaveService enclaveService = new EnclaveService(enclaveUrl, uri.getPort(), httpClient);
             Enclave enclave = new Tessera(enclaveService, client);
             return enclave;
-        }
+        }*/
+        return null;
     }
 
-    private Map<String,OkHttpClient> ipcClients = new ConcurrentHashMap<>();
+    private Map<String, OkHttpClient> ipcClients = new ConcurrentHashMap<>();
 
     private OkHttpClient getIPCHttpClient(String thirdPartyURL) {
-        if (ipcClients.containsKey(thirdPartyURL)){
+        return null;
+        /*if (ipcClients.containsKey(thirdPartyURL)){
             return  ipcClients.get(thirdPartyURL);
         }
         OkHttpClient client = new OkHttpClient.Builder()
@@ -206,7 +203,7 @@ public class RawContractService extends AbstractService {
 
         ipcClients.put(thirdPartyURL, client);
 
-        return client;
+        return client;*/
     }
 
 }
