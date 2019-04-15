@@ -1,6 +1,13 @@
 # Permission for a given network
 
- Tags: basic, permission
+ Tags: permission
+
+
+## Set up config
+* network admin org is "NWADMIN"
+* network admin role is "NWADMIN"
+* org admin role is "OADMIN"
+
 
 
 ## Check the initial status of network after boot up

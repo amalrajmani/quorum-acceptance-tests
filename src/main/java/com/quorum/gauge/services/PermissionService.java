@@ -50,12 +50,6 @@ public class PermissionService extends AbstractService {
     }
 
 
-
-    public Observable<ExecStatusInfo> setAccountPermission(QuorumNode node, String fromAccount, String addAccount, int access) {
-        Quorum client = connectionFactory().getConnection(node);
-        return null;//client.quorumSetAccountPermission(addAccount, access, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
-    }
-
     public Observable<ExecStatusInfo> addOrg(QuorumNode node, String org, String enode, String address) {
         Quorum client = connectionFactory().getConnection(node);
         String fromAccount = accountService.getDefaultAccountAddress(node).toBlocking().first();
@@ -122,31 +116,5 @@ public class PermissionService extends AbstractService {
         String fromAccount = accountService.getDefaultAccountAddress(node).toBlocking().first();
         return client.quorumPermissionApproveOrg(org, enode, address, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
 
-    }
-
-    public Observable<ExecStatusInfo> addAccountToVoterList(QuorumNode node, String address) {
-        Quorum client = connectionFactory().getConnection(node);
-        String fromAccount = accountService.getDefaultAccountAddress(node).toBlocking().first();
-        return null;//client.quorumAddPermissionVoter(address, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
-
-    }
-
-    public Observable<ExecStatusInfo> removeAccountFromVoterList(QuorumNode node, String address) {
-        Quorum client = connectionFactory().getConnection(node);
-        String fromAccount = accountService.getDefaultAccountAddress(node).toBlocking().first();
-        return null;//client.quorumRemovePermissionVoter(address, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
-
-    }
-
-    public Observable<ExecStatusInfo> proposeNodeDeactivation(QuorumNode node, String nodeId) {
-        Quorum client = connectionFactory().getConnection(node);
-        String fromAccount = accountService.getDefaultAccountAddress(node).toBlocking().first();
-        return null;//client.quorumProposePermissionNodeDeactivation(nodeId, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
-    }
-
-    public Observable<ExecStatusInfo> approveNodeDeactivation(QuorumNode node, String nodeId) {
-        Quorum client = connectionFactory().getConnection(node);
-        String fromAccount = accountService.getDefaultAccountAddress(node).toBlocking().first();
-        return null;//client.quorumApprovePermissionNodeDeactivation(nodeId, new PrivateTransaction(fromAccount, null, DEFAULT_GAS_LIMIT, null, BigInteger.ZERO, null, null, null)).observable();
     }
 }

@@ -31,8 +31,13 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     private static final Map<String, Integer> nodeStatusMap = new HashMap<>();
     private static final Map<String, Integer> orgStatusMap = new HashMap<>();
     private static final Map<String, Integer> acctStatusMap = new HashMap<>();
+    private static final Map<String, String> configMap = new HashMap<>();
 
     static {
+        configMap.put("NWADMIN-org", "NWADMIN");
+        configMap.put("NWADMIN-role", "NWADMIN");
+        configMap.put("OADMIN-role", "OADMIN");
+
         accountAccessMap.put("ReadOnly", 0);
         accountAccessMap.put("Transact", 1);
         accountAccessMap.put("ContractDeploy", 2);
@@ -53,6 +58,41 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         orgStatusMap.put("PendingSuspension", 3);
         orgStatusMap.put("Suspended", 4);
         orgStatusMap.put("RevokeSuspension", 5);
+    }
+
+    public NodeAccountPermission() {
+    }
+
+    @Step("network admin org is <org>")
+    public void SetupNetworkAdminOrg(String org) {
+        DataStoreFactory.getSpecDataStore().put("NWADMIN-org", org);
+    }
+
+    @Step("network admin role is <role>")
+    public void SetupNetworkAdminRole(String role) {
+        DataStoreFactory.getSpecDataStore().put("NWADMIN-role", role);
+    }
+
+    @Step("org admin role is <org>")
+    public void SetupOrgAdminRole(String role) {
+        DataStoreFactory.getSpecDataStore().put("OADMIN-role", role);
+    }
+
+    private String getNetworkAdminOrg(String org) {
+        String key = org + "-org";
+        if (configMap.get(key) != null) {
+            logger.info("AJ-key " + key + " has value");
+            return configMap.get(key);
+        }
+        return org;
+    }
+
+    private String getNetworkOrgAdminRole(String role) {
+        String key = role + "-role";
+        if (configMap.get(key) != null) {
+            return configMap.get(key);
+        }
+        return role;
     }
 
 
@@ -86,7 +126,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
             logger.info("{} node -> {}", c, o);
         }
         DataStoreFactory.getSpecDataStore().put("permNodeList", pn);
-        //logger.info("acctlist {}", pn);
+
         PermissionRoleList roleList = permissionService.getPermissionRoleList(node).toBlocking().first();
         List<PermissionRoleList.PermissionRoleInfo> pr = roleList.getPermissionRoleList();
         c = 0;
@@ -95,68 +135,71 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
             logger.info("{} role -> {}", c, o);
         }
         DataStoreFactory.getSpecDataStore().put("permRoleList", pr);
-        //logger.info("acctlist {}", pr);
     }
 
-    @Step("check org <org> is <status> with parent <porg>, level <level> and empty sub orgs")
-    public void checkSubOrgExists(String org, String status, String porg, int level) throws Exception {
-        List<PermissionOrgList.PermissionOrgInfo> permOrgList = (ArrayList<PermissionOrgList.PermissionOrgInfo>) DataStoreFactory.getSpecDataStore().get("permOrgList");
-        assertThat(permOrgList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionOrgList.PermissionOrgInfo i : permOrgList) {
-            ++c;
-            logger.debug("{} org id: {} parent id: {} level: {}", c, i.getFullOrgId(), i.getParentOrgId(), i.getLevel());
-            if (i.getFullOrgId().equals(org) && i.getParentOrgId().equals(porg)
-                && i.getLevel() == level && (i.getSubOrgList() == null || i.getSubOrgList().size() == 0) &&
-                i.getStatus() == orgStatusMap.get(status)) {
-                isPresent = true;
-                break;
-            }
-        }
+
+    @Step("check org <org> is <status> with no parent, level <level> and sub orgs <slist>")
+    public void checkOrgExists1(String org, String status, int level, String slist) throws Exception {
+        boolean isPresent = orgExists("TYPE1", org, "", status, level, slist);
         assertThat(isPresent).isTrue();
     }
 
-    @Step("check org <org> is <status> with no parent, level <level> and sub orgs <slist>")
-    public void checkOrgWithChildrenExists(String org, String status, int level, String slist) throws Exception {
-        List<PermissionOrgList.PermissionOrgInfo> permOrgList = (ArrayList<PermissionOrgList.PermissionOrgInfo>) DataStoreFactory.getSpecDataStore().get("permOrgList");
-        assertThat(permOrgList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionOrgList.PermissionOrgInfo i : permOrgList) {
-            ++c;
-            logger.debug("{} org id: {} parent id: {} level: {}", c, i.getFullOrgId(), i.getParentOrgId(), i.getLevel());
-            if (i.getFullOrgId().equals(org) && (i.getParentOrgId() == null || i.getParentOrgId().equals(""))
-                && i.getLevel() == level && (i.getSubOrgList().size() > 0 && i.getSubOrgList().containsAll(Arrays.asList(slist.split(",")))) &&
-                i.getStatus() == orgStatusMap.get(status)) {
-                isPresent = true;
-                break;
-            }
-        }
+    @Step("check org <org> is <status> with parent <porg>, level <level> and empty sub orgs")
+    public void checkOrgExists2(String org, String status, String porg, int level) throws Exception {
+        boolean isPresent = orgExists("TYPE2", org, porg, status, level, "");
         assertThat(isPresent).isTrue();
     }
 
     @Step("check org <org> is <status> with no parent, level <level> and empty sub orgs")
-    public void checkOrgExists(String org, String status, int level) throws Exception {
+    public void checkOrgExists3(String org, String status, int level) throws Exception {
+        boolean isPresent = orgExists("TYPE3", org, "", status, level, "");
+        assertThat(isPresent).isTrue();
+    }
+
+    private boolean orgExists(String checkType, String org, String porg, String status, int level, String slist) {
+        org = getNetworkAdminOrg(org);
+        porg = getNetworkAdminOrg(porg);
         List<PermissionOrgList.PermissionOrgInfo> permOrgList = (ArrayList<PermissionOrgList.PermissionOrgInfo>) DataStoreFactory.getSpecDataStore().get("permOrgList");
         assertThat(permOrgList.size()).isNotEqualTo(0);
         int c = 0;
         boolean isPresent = false;
+        l1:
         for (PermissionOrgList.PermissionOrgInfo i : permOrgList) {
             ++c;
             logger.debug("{} org id: {} parent id: {} level: {}", c, i.getFullOrgId(), i.getParentOrgId(), i.getLevel());
-            if (i.getFullOrgId().equals(org) && (i.getParentOrgId() == null || i.getParentOrgId().equals(""))
-                && i.getLevel() == level && (i.getSubOrgList() == null || i.getSubOrgList().size() == 0) &&
-                i.getStatus() == orgStatusMap.get(status)) {
-                isPresent = true;
-                break;
+            switch (checkType) {
+                case "TYPE1":
+                    if (i.getFullOrgId().equals(org) && (i.getParentOrgId() == null || i.getParentOrgId().equals(""))
+                        && i.getLevel() == level && (i.getSubOrgList().size() > 0 && i.getSubOrgList().containsAll(Arrays.asList(slist.split(",")))) &&
+                        i.getStatus() == orgStatusMap.get(status)) {
+                        isPresent = true;
+                        break l1;
+                    }
+                    break;
+                case "TYPE2":
+                    if (i.getFullOrgId().equals(org) && i.getParentOrgId().equals(porg)
+                        && i.getLevel() == level && (i.getSubOrgList() == null || i.getSubOrgList().size() == 0) &&
+                        i.getStatus() == orgStatusMap.get(status)) {
+                        isPresent = true;
+                        break l1;
+                    }
+                    break;
+                case "TYPE3":
+                    if (i.getFullOrgId().equals(org) && (i.getParentOrgId() == null || i.getParentOrgId().equals(""))
+                        && i.getLevel() == level && (i.getSubOrgList() == null || i.getSubOrgList().size() == 0) &&
+                        i.getStatus() == orgStatusMap.get(status)) {
+                        isPresent = true;
+                        break l1;
+                    }
+                    break;
             }
         }
-        assertThat(isPresent).isTrue();
+        return isPresent;
     }
 
     @Step("check org <org> has <node> with status <status>")
     public void checkNodeExists(String org, QuorumNode node, String status) throws Exception {
+        org = getNetworkAdminOrg(org);
         String enodeId = getEnodeId(node);
         List<PermissionNodeList.PermissionNodeInfo> permNodeList = (ArrayList<PermissionNodeList.PermissionNodeInfo>) DataStoreFactory.getSpecDataStore().get("permNodeList");
         assertThat(permNodeList.size()).isNotEqualTo(0);
@@ -173,78 +216,76 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(isPresent).isTrue();
     }
 
-    //check org "NWADMIN" has role "NWADMIN" with access "FullAccess"
     @Step("check org <org> has role <role> with access <access> and permission to vote and is active")
-    public void checkRoleExists(String org, String role, String access) throws Exception {
-        List<PermissionRoleList.PermissionRoleInfo> permRoleList = (ArrayList<PermissionRoleList.PermissionRoleInfo>) DataStoreFactory.getSpecDataStore().get("permRoleList");
-        assertThat(permRoleList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionRoleList.PermissionRoleInfo i : permRoleList) {
-            ++c;
-            if (i.getOrgId().equals(org) && i.getRoleId().equals(role) && i.getAccess() == accountAccessMap.get(access) && i.isActive() && i.isVoter()) {
-                isPresent = true;
-                break;
-            }
-        }
+    public void checkRoleExists1(String org, String role, String access) throws Exception {
+        boolean isPresent = roleExists("TYPE1", org, role, access);
         assertThat(isPresent).isTrue();
     }
 
     @Step("check org <org> has role <role> with access <access> and no permission to vote and is active")
-    public void checkRoleExists1(String org, String role, String access) throws Exception {
-        List<PermissionRoleList.PermissionRoleInfo> permRoleList = (ArrayList<PermissionRoleList.PermissionRoleInfo>) DataStoreFactory.getSpecDataStore().get("permRoleList");
-        assertThat(permRoleList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionRoleList.PermissionRoleInfo i : permRoleList) {
-            ++c;
-            if (i.getOrgId().equals(org) && i.getRoleId().equals(role) && i.getAccess() == accountAccessMap.get(access) && i.isActive() && !i.isVoter()) {
-                isPresent = true;
-                break;
-            }
-        }
+    public void checkRoleExists2(String org, String role, String access) throws Exception {
+        boolean isPresent = roleExists("TYPE2", org, role, access);
         assertThat(isPresent).isTrue();
     }
 
 
     @Step("check org <org> has role <role> with access <access> and no permission to vote and is not active")
-    public void checkRoleExists2(String org, String role, String access) throws Exception {
+    public void checkRoleExists3(String org, String role, String access) throws Exception {
+        boolean isPresent = roleExists("TYPE3", org, role, access);
+        assertThat(isPresent).isTrue();
+    }
+
+    private boolean roleExists(String checkType, String org, String role, String access) {
+        org = getNetworkAdminOrg(org);
+        role = getNetworkOrgAdminRole(role);
         List<PermissionRoleList.PermissionRoleInfo> permRoleList = (ArrayList<PermissionRoleList.PermissionRoleInfo>) DataStoreFactory.getSpecDataStore().get("permRoleList");
         assertThat(permRoleList.size()).isNotEqualTo(0);
         int c = 0;
         boolean isPresent = false;
+        l1:
         for (PermissionRoleList.PermissionRoleInfo i : permRoleList) {
             ++c;
-            if (i.getOrgId().equals(org) && i.getRoleId().equals(role) && i.getAccess() == accountAccessMap.get(access) && !i.isActive() && !i.isVoter()) {
-                isPresent = true;
-                break;
+            switch (checkType) {
+                case "TYPE1":
+                    if (i.getOrgId().equals(org) && i.getRoleId().equals(role) && i.getAccess() == accountAccessMap.get(access) && i.isActive() && i.isVoter()) {
+                        isPresent = true;
+                        break l1;
+                    }
+                    break;
+                case "TYPE2":
+                    if (i.getOrgId().equals(org) && i.getRoleId().equals(role) && i.getAccess() == accountAccessMap.get(access) && i.isActive() && !i.isVoter()) {
+                        isPresent = true;
+                        break l1;
+                    }
+                    break;
+                case "TYPE3":
+                    if (i.getOrgId().equals(org) && i.getRoleId().equals(role) && i.getAccess() == accountAccessMap.get(access) && !i.isActive() && !i.isVoter()) {
+                        isPresent = true;
+                        break l1;
+                    }
+                    break;
             }
+
         }
-        assertThat(isPresent).isTrue();
+        return isPresent;
     }
 
 
     @Step("check <node>'s default account is from org <org> and has role <role> and is org admin and is active")
-    public void checkAccountExists(QuorumNode node, String org, String role) throws Exception {
-        String defaultAcct = accountService.getDefaultAccountAddress(node).toBlocking().first();
-        List<PermissionAccountList.PermissionAccountInfo> pacctList = (ArrayList<PermissionAccountList.PermissionAccountInfo>) DataStoreFactory.getSpecDataStore().get("permAcctList");
-        assertThat(pacctList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionAccountList.PermissionAccountInfo i : pacctList) {
-            ++c;
-            logger.debug("{} address: {} role: {} org: {}", c, i.getAcctId(), i.getRoleId(), i.getOrgId());
-            if (i.getAcctId().equalsIgnoreCase(defaultAcct) && i.getOrgId().equals(org) &&
-                i.getRoleId().equals(role) && i.isOrgAdmin() && i.getStatus() == acctStatusMap.get("Active")) {
-                isPresent = true;
-                break;
-            }
-        }
+    public void checkAccountExists1(QuorumNode node, String org, String role) throws Exception {
+        boolean isPresent = accountExists(node, org, role, true);
         assertThat(isPresent).isTrue();
     }
 
     @Step("check <node>'s default account is from org <org> and has role <role> and is not org admin and is active")
-    public void checkAccountExists1(QuorumNode node, String org, String role) throws Exception {
+    public void checkAccountExists2(QuorumNode node, String org, String role) throws Exception {
+        boolean isPresent = accountExists(node, org, role, false);
+        assertThat(isPresent).isTrue();
+    }
+
+    private boolean accountExists(QuorumNode node, String org, String role, boolean orgAdmin) {
+        org = getNetworkAdminOrg(org);
+        role = getNetworkOrgAdminRole(role);
         String defaultAcct = accountService.getDefaultAccountAddress(node).toBlocking().first();
         List<PermissionAccountList.PermissionAccountInfo> pacctList = (ArrayList<PermissionAccountList.PermissionAccountInfo>) DataStoreFactory.getSpecDataStore().get("permAcctList");
         assertThat(pacctList.size()).isNotEqualTo(0);
@@ -253,17 +294,26 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         for (PermissionAccountList.PermissionAccountInfo i : pacctList) {
             ++c;
             logger.debug("{} address: {} role: {} org: {}", c, i.getAcctId(), i.getRoleId(), i.getOrgId());
-            if (i.getAcctId().equalsIgnoreCase(defaultAcct) && i.getOrgId().equals(org) &&
-                i.getRoleId().equals(role) && !i.isOrgAdmin() && i.getStatus() == acctStatusMap.get("Active")) {
-                isPresent = true;
-                break;
+            if (orgAdmin) {
+                if (i.getAcctId().equalsIgnoreCase(defaultAcct) && i.getOrgId().equals(org) &&
+                    i.getRoleId().equals(role) && i.isOrgAdmin() && i.getStatus() == acctStatusMap.get("Active")) {
+                    isPresent = true;
+                    break;
+                }
+            } else {
+                if (i.getAcctId().equalsIgnoreCase(defaultAcct) && i.getOrgId().equals(org) &&
+                    i.getRoleId().equals(role) && !i.isOrgAdmin() && i.getStatus() == acctStatusMap.get("Active")) {
+                    isPresent = true;
+                    break;
+                }
             }
         }
-        assertThat(isPresent).isTrue();
+        return isPresent;
     }
 
     @Step("from <fromNode> add new org <org> with enode <enode> and <acctNode>'s default account")
     public void addOrg(QuorumNode fromNode, String org, String enode, QuorumNode acctNode) {
+        org = getNetworkAdminOrg(org);
         String defAcct = accountService.getDefaultAccountAddress(acctNode).toBlocking().first();
         ExecStatus status = permissionService.addOrg(fromNode, org, enode, defAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
@@ -272,20 +322,47 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
 
-    @Step("from <fromNode> assign org <org> role <role> to <acctNode>'s default account")
-    public void assignAccountRole(QuorumNode fromNode, String org, String role, QuorumNode acctNode) {
-        logger.info("org {} role {}", org, role);
+    @Step("from <fromNode> approve new org <org> with enode <enode> and <acctNode>'s default account")
+    public void approveOrg(QuorumNode fromNode, String org, String enode, QuorumNode acctNode) {
+        org = getNetworkAdminOrg(org);
         String defAcct = accountService.getDefaultAccountAddress(acctNode).toBlocking().first();
-        logger.info("org {} role {} defacct {}", org, role, defAcct);
-        ExecStatus status = permissionService.assignAccountRole(fromNode, defAcct, org, role).toBlocking().first().getExecStatus();
+        ExecStatus status = permissionService.approveOrg(fromNode, org, enode, defAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
         waitForSomeSeconds(1);
         getNetworkDetails(fromNode);
     }
 
 
+    @Step("from <fromNode> update org <org>'s status to <status>")
+    public void updateOrgStatus(QuorumNode fromNode, String org, String status) {
+        org = getNetworkAdminOrg(org);
+        ExecStatus estatus = permissionService.updateOrgStatus(fromNode, org, orgStatusMap.get(status)).toBlocking().first().getExecStatus();
+        assertThat(estatus.isStatus()).isTrue();
+        waitForSomeSeconds(1);
+        getNetworkDetails(fromNode);
+    }
+
+    @Step("from <fromNode> approve org <org>'s status <status>")
+    public void approveOrgStatus(QuorumNode fromNode, String org, String status) {
+        org = getNetworkAdminOrg(org);
+        ExecStatus estatus = permissionService.approveOrgStatus(fromNode, org, orgStatusMap.get(status)).toBlocking().first().getExecStatus();
+        assertThat(estatus.isStatus()).isTrue();
+        waitForSomeSeconds(1);
+        getNetworkDetails(fromNode);
+    }
+
+    @Step("from <fromNode> add new sub org <sorg> under org <porg>")
+    public void addSubOrg(QuorumNode fromNode, String sorg, String porg) {
+        porg = getNetworkAdminOrg(porg);
+        ExecStatus status = permissionService.addSubOrg(fromNode, porg, sorg, "", "0x0000000000000000000000000000000000000000").toBlocking().first().getExecStatus();
+        assertThat(status.isStatus()).isTrue();
+        waitForSomeSeconds(1);
+        getNetworkDetails(fromNode);
+    }
+
     @Step("check org <org>'s status is <status>")
     public void checkOrgStatusExists(String org, String status) throws Exception {
+        org = getNetworkAdminOrg(org);
         List<PermissionOrgList.PermissionOrgInfo> orgList = (ArrayList<PermissionOrgList.PermissionOrgInfo>) DataStoreFactory.getSpecDataStore().get("permOrgList");
         assertThat(orgList.size()).isNotEqualTo(0);
         int c = 0;
@@ -301,24 +378,22 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(isPresent).isTrue();
     }
 
-    @Step("from <fromNode> update org <org>'s status to <status>")
-    public void updateOrgStatus(QuorumNode fromNode, String org, String status) {
-        ExecStatus estatus = permissionService.updateOrgStatus(fromNode, org, orgStatusMap.get(status)).toBlocking().first().getExecStatus();
-        assertThat(estatus.isStatus()).isTrue();
-        waitForSomeSeconds(1);
-        getNetworkDetails(fromNode);
-    }
-
-    @Step("from <fromNode> approve org <org>'s status <status>")
-    public void approveOrgStatus(QuorumNode fromNode, String org, String status) {
-        ExecStatus estatus = permissionService.approveOrgStatus(fromNode, org, orgStatusMap.get(status)).toBlocking().first().getExecStatus();
-        assertThat(estatus.isStatus()).isTrue();
+    @Step("from <fromNode> assign org <org> role <role> to <acctNode>'s default account")
+    public void assignAccountRole(QuorumNode fromNode, String org, String role, QuorumNode acctNode) {
+        org = getNetworkAdminOrg(org);
+        role = getNetworkOrgAdminRole(role);
+        logger.info("org {} role {}", org, role);
+        String defAcct = accountService.getDefaultAccountAddress(acctNode).toBlocking().first();
+        logger.info("org {} role {} defacct {}", org, role, defAcct);
+        ExecStatus status = permissionService.assignAccountRole(fromNode, defAcct, org, role).toBlocking().first().getExecStatus();
+        assertThat(status.isStatus()).isTrue();
         waitForSomeSeconds(1);
         getNetworkDetails(fromNode);
     }
 
     @Step("from <fromNode> under org <org> add enode <enode>")
     public void addNodeToOrg(QuorumNode fromNode, String org, String enode) {
+        org = getNetworkAdminOrg(org);
         ExecStatus status = permissionService.addNodeToOrg(fromNode, org, enode).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
         waitForSomeSeconds(1);
@@ -326,17 +401,19 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
     @Step("from <fromNode> update status of org <org>'s enode <enode> with status <status>")
-    public void updateNodeStatus(QuorumNode fromNode, String org, String enode, String status) {
-        ExecStatus exstatus = permissionService.updateNode(fromNode, org, enode, nodeStatusMap.get(status)).toBlocking().first().getExecStatus();
-        assertThat(exstatus.isStatus()).isTrue();
-        waitForSomeSeconds(1);
-        getNetworkDetails(fromNode);
+    public void updateNodeStatus1(QuorumNode fromNode, String org, String enode, String status) {
+        updateOrgNodeStatus(fromNode, org, status, enode);
     }
 
-    @Step("from <fromNode> update status of org <org>'s node <enode> with status <status>")
-    public void updateNodeStatus1(QuorumNode fromNode, String org, QuorumNode node, String status) {
+    @Step("from <fromNode> update status of org <org>'s node <node> with status <status>")
+    public void updateNodeStatus2(QuorumNode fromNode, String org, QuorumNode node, String status) {
         String enodeId = getEnodeId(node);
         String fullEnodeId = getFullEnode(enodeId, node);
+        updateOrgNodeStatus(fromNode, org, status, fullEnodeId);
+    }
+
+    private void updateOrgNodeStatus(QuorumNode fromNode, String org, String status, String fullEnodeId) {
+        org = getNetworkAdminOrg(org);
         ExecStatus exstatus = permissionService.updateNode(fromNode, org, fullEnodeId, nodeStatusMap.get(status)).toBlocking().first().getExecStatus();
         assertThat(exstatus.isStatus()).isTrue();
         waitForSomeSeconds(1);
@@ -345,6 +422,8 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
 
     @Step("from <fromNode> add new role <role> under org <org> with access <access> and no voting")
     public void addNewRoleToOrg(QuorumNode fromNode, String role, String org, String access) {
+        org = getNetworkAdminOrg(org);
+        role = getNetworkOrgAdminRole(role);
         ExecStatus status = permissionService.addNewRole(fromNode, org, role, accountAccessMap.get(access), false).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
         waitForSomeSeconds(1);
@@ -352,25 +431,10 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
     @Step("from <fromNode> remove role <role> from org <org>")
-    public void removeRoleToOrg(QuorumNode fromNode, String role, String org) {
+    public void removeRoleFromOrg(QuorumNode fromNode, String role, String org) {
+        org = getNetworkAdminOrg(org);
+        role = getNetworkOrgAdminRole(role);
         ExecStatus status = permissionService.removeRole(fromNode, org, role).toBlocking().first().getExecStatus();
-        assertThat(status.isStatus()).isTrue();
-        waitForSomeSeconds(1);
-        getNetworkDetails(fromNode);
-    }
-
-    @Step("from <fromNode> add new sub org <sorg> under org <porg>")
-    public void addSubOrg(QuorumNode fromNode, String sorg, String porg) {
-        ExecStatus status = permissionService.addSubOrg(fromNode, porg, sorg, "", "0x0000000000000000000000000000000000000000").toBlocking().first().getExecStatus();
-        assertThat(status.isStatus()).isTrue();
-        waitForSomeSeconds(1);
-        getNetworkDetails(fromNode);
-    }
-
-    @Step("from <fromNode> approve new org <org> with enode <enode> and <acctNode>'s default account")
-    public void approveOrg(QuorumNode fromNode, String org, String enode, QuorumNode acctNode) {
-        String defAcct = accountService.getDefaultAccountAddress(acctNode).toBlocking().first();
-        ExecStatus status = permissionService.approveOrg(fromNode, org, enode, defAcct).toBlocking().first().getExecStatus();
         assertThat(status.isStatus()).isTrue();
         waitForSomeSeconds(1);
         getNetworkDetails(fromNode);
@@ -378,6 +442,7 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
 
     @Step("check org <org> has enode <enodeid> with status <status>")
     public void checkEnodeExists(String org, String enode, String status) throws Exception {
+        org = getNetworkAdminOrg(org);
         List<PermissionNodeList.PermissionNodeInfo> nodeList = (ArrayList<PermissionNodeList.PermissionNodeInfo>) DataStoreFactory.getSpecDataStore().get("permNodeList");
         assertThat(nodeList.size()).isNotEqualTo(0);
         int c = 0;
@@ -394,59 +459,6 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
         assertThat(isPresent).isTrue();
     }
 
-    /*@Step("check org <org> has enode <enodeid> with status <status>")
-    public void checkOrgHasEnodeExists(String org, String enode, String status) throws Exception {
-        List<PermissionNodeList.PermissionNodeInfo> nodeList = (ArrayList<PermissionNodeList.PermissionNodeInfo>) DataStoreFactory.getSpecDataStore().get("permNodeList");
-        assertThat(nodeList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionNodeList.PermissionNodeInfo i : nodeList) {
-            ++c;
-            logger.debug("{} org: {} enode: {} status: {}", c, i.getOrgId(), i.getUrl(), i.getStatus());
-            if (i.getOrgId().equalsIgnoreCase(org) && i.getUrl().equals(enode) &&
-                 i.getStatus() == nodeStatusMap.get(status)) {
-                isPresent = true;
-                break;
-            }
-        }
-        assertThat(isPresent).isTrue();
-    }*/
-
-
-    //TODO remove old api's below after final review
-
-    @Step("Ensure permission account list has <initialAccountCount> accounts in <node>")
-    public void checkPermissionAccountCount(int initialAccountCount, QuorumNode node) {
-        PermissionAccountList pacct = getPermissionAccountList(node);
-        int accountListSize = pacct.getPermissionAccountList().size();
-        logger.debug("account list size:{}", accountListSize);
-        assertThat(initialAccountCount).isEqualTo(accountListSize);
-        DataStoreFactory.getSpecDataStore().put("permAcctList", pacct.getPermissionAccountList());
-    }
-
-    public PermissionAccountList getPermissionAccountList(QuorumNode node) {
-        PermissionAccountList pacct = permissionService.getPermissionAccountList(node).toBlocking().first();
-        return pacct;
-    }
-
-
-    @Step("Check <node>'s default account has permission <access>")
-    public void checkAccountExistsWithPerm(QuorumNode node, String access) throws Exception {
-        String defaultAcct = accountService.getDefaultAccountAddress(node).toBlocking().first();
-        List<PermissionAccountList.PermissionAccountInfo> pacctList = getPermissionAccountList(QuorumNode.Node1).getPermissionAccountList();
-        assertThat(pacctList.size()).isNotEqualTo(0);
-        int c = 0;
-        boolean isPresent = false;
-        for (PermissionAccountList.PermissionAccountInfo i : pacctList) {
-            ++c;
-            /*logger.debug("{} address: {} access: {}", c, i.getAddress(), i.getAccess());
-            if (i.getAddress().equalsIgnoreCase(defaultAcct) && i.getAccess().equalsIgnoreCase(access)) {
-                isPresent = true;
-                break;
-            }*/
-        }
-        assertThat(isPresent).isTrue();
-    }
 
     @Step("Deploy <contractName> smart contract with initial value <initialValue> from a default account in <node> fails with error <error>")
     public void setupStorecAsPublicDependentContract(String contractName, int initialValue, QuorumNode node, String error) {
@@ -480,53 +492,6 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
 
-    @Step("Ensure permission node list has <initialNodeCount> nodes in <node> when network started")
-    public void checkPermissionNodeCount(int initialNodeCount, QuorumNode node) {
-        List<PermissionNodeList.PermissionNodeInfo> nodeList = permissionService.getPermissionNodeList(node).toBlocking().first().getPermissionNodeList();
-        int nodeListSize = nodeList.size();
-        logger.debug("node list size:{}", nodeListSize);
-
-        if (initialNodeCount >= 0)
-            assertThat(initialNodeCount).isEqualTo(nodeListSize);
-        DataStoreFactory.getSpecDataStore().put("permNodeList", nodeList);
-    }
-
-    @Step("Set account <addAccount> with permission <access> from <node> as account <fromAccount>")
-    public void setAccountPermission(String addAccount, String access, QuorumNode node, String fromAccount) {
-        ExecStatus status = permissionService.setAccountPermission(node, fromAccount, addAccount, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
-        logger.debug("node list size:{}", status);
-        assertThat(status.isStatus()).isTrue();
-    }
-
-
-    @Step("Set <node1>'s default account with permission <access> from <node2>'s default account")
-    public void setAccountPermissionWithDefault(QuorumNode node1, String access, QuorumNode node2) {
-        String targetDefaultAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        String frmDefaultAcct = accountService.getDefaultAccountAddress(node2).toBlocking().first();
-
-        ExecStatus status = permissionService.setAccountPermission(node2, frmDefaultAcct, targetDefaultAcct, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
-        logger.debug("node list size:{}", status);
-        assertThat(status.isStatus()).isTrue();
-    }
-
-
-    @Step("Set account <addAccount> with permission <access> from <node> as account <fromAccount> fails with error <error>")
-    public void setAccountPermissionFailed(String addAccount, String access, QuorumNode node, String fromAccount, String error) {
-        ExecStatus status = permissionService.setAccountPermission(node, fromAccount, addAccount, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
-        logger.debug("node list size:{}", status);
-        assertThat(status.isStatus()).isFalse();
-        assertThat(status.getMsg().contains(error)).isTrue();
-    }
-
-    @Step("Set <node1>'s default account with permission <access> from from <node2>'s default account fails with error <error>")
-    public void setAccountPermissionFailedWithDefault(QuorumNode node1, String access, QuorumNode node2, String error) {
-        String targetDefaultAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        String frmDefaultAcct = accountService.getDefaultAccountAddress(node2).toBlocking().first();
-        ExecStatus status = permissionService.setAccountPermission(node2, frmDefaultAcct, targetDefaultAcct, accountAccessMap.get(access)).toBlocking().first().getExecStatus();
-        logger.debug("node list size:{}", status);
-        assertThat(status.isStatus()).isFalse();
-        assertThat(status.getMsg().contains(error)).isTrue();
-    }
 
     public String getFullEnode(String enode, QuorumNode n1) {
         List<PermissionNodeList.PermissionNodeInfo> permNodeList = permissionService.getPermissionNodeList(n1).toBlocking().first().getPermissionNodeList();
@@ -543,73 +508,12 @@ public class NodeAccountPermission extends AbstractSpecImplementation {
     }
 
 
-    @Step("Add <node1>'s default account as voter from <node>")
-    public void addAccountToVoterList(QuorumNode node1, QuorumNode node) {
-        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        ExecStatus status = permissionService.addAccountToVoterList(node, defAcct).toBlocking().first().getExecStatus();
-        assertThat(status.isStatus()).isTrue();
-    }
-
-    @Step("Check <node1>'s default account is present in voter list from <node>")
-    public void checkAccountInVoterList(QuorumNode node1, QuorumNode node) {
-        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        //List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
-        boolean found = false;
-        /*for (String s : voterList) {
-            if (s.equalsIgnoreCase(defAcct)) {
-                found = true;
-                break;
-            }
-        }*/
-        assertThat(found).isTrue();
-    }
-
-    @Step("Check <node1>'s default account is not present in voter list from <node>")
-    public void checkAccountNotInVoterList(QuorumNode node1, QuorumNode node) {
-        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        //List<String> voterList = permissionService.getPermissionNodeVoterList(node).toBlocking().first().getPermissionNodeList();
-        boolean found = false;
-        /*if (voterList != null) {
-            for (String s : voterList) {
-                if (s.equalsIgnoreCase(defAcct)) {
-                    found = true;
-                    break;
-                }
-            }
-        }*/
-        assertThat(found).isFalse();
-    }
-
-    @Step("Remove <node1>'s default account as voter from <node>")
-    public void removeAccountFromVoter(QuorumNode node1, QuorumNode node) {
-        String defAcct = accountService.getDefaultAccountAddress(node1).toBlocking().first();
-        ExecStatus status = permissionService.removeAccountFromVoterList(node, defAcct).toBlocking().first().getExecStatus();
-        assertThat(status.isStatus()).isTrue();
-
-    }
-
     public String getEnodeId(QuorumNode node) {
         String enode = permissionService.NodeInfo(node);
         String enodeId = enode.substring(0, enode.indexOf("@")).substring("enode://".length());
         return enodeId;
     }
 
-    @Step("Propose node deactivation for <enode> from <node>")
-    public void proposeNodeDeactivation(QuorumNode node1, QuorumNode node) {
-        String enodeId = getEnodeId(node1);
-        String fullEnodeId = getFullEnode(enodeId, node);
-        ExecStatus status = permissionService.proposeNodeDeactivation(node, fullEnodeId).toBlocking().first().getExecStatus();
-        assertThat(status.isStatus()).isTrue();
-
-    }
-
-    @Step("Approve node deactivation for <node1> from <node>")
-    public void approveNodeDeactivation(QuorumNode node1, QuorumNode node) {
-        String enodeId = getEnodeId(node1);
-        String fullEnodeId = getFullEnode(enodeId, node);
-        ExecStatus status = permissionService.approveNodeDeactivation(node, fullEnodeId).toBlocking().first().getExecStatus();
-        assertThat(status.isStatus()).isTrue();
-    }
 
     @Step("Save current blocknumber from <node>")
     public void saveCurrentBlockNumber(QuorumNode node) {
